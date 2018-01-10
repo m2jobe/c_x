@@ -11,11 +11,59 @@ import ccxt from 'ccxt';
 //import ReactHighcharts from 'react-highcharts';
 import moment from 'moment';
 const OrderBook = require('react-trading-ui')
-
+import ReactTable from 'react-table'
 const ReactHighcharts = require("react-highcharts");
 require("highcharts/js/highcharts-more")(ReactHighcharts.Highcharts);
 require("highcharts/js/modules/stock.js")(ReactHighcharts.Highcharts);
 const log       = require ('ololog').configure ({ locate: false })
+
+const columns = [ {
+  Header: 'Symbol',
+  accessor: 'symbol'
+},{
+  Header: 'Amount',
+  accessor: 'amount' // String-based value accessors!
+}, {
+  Header: 'Cost',
+  accessor: 'cost',
+  width:150
+},{
+  Header: 'Date',
+  accessor: 'datetime', // String-based value accessors!,
+  width: 150
+}, {
+  Header: 'Price',
+  accessor: 'price'
+},{
+  Header: 'Filled',
+  accessor: 'filled' // String-based value accessors!
+}, {
+  Header: 'Price',
+  accessor: 'price'
+},{
+  Header: 'Remaining',
+  accessor: 'remaining' // String-based value accessors!
+}, {
+  Header: 'Side',
+  accessor: 'side'
+}, {
+  Header: 'Status',
+  accessor: 'status'
+},];
+
+const columnsBalance = [ {
+  Header: 'Currency',
+  accessor: 'currency'
+},{
+  Header: 'Balance',
+  accessor: 'balance' // String-based value accessors!
+}, {
+  Header: 'Available',
+  accessor: 'available',
+},{
+  Header: 'Hold',
+  accessor: 'hold', // String-based value accessors!,
+},]
 
 
 class HomeView extends React.Component {
@@ -43,8 +91,19 @@ class HomeView extends React.Component {
             tickerLast : '',
             selectedOption :'BTC/USD',
             balance: '',
-            total: 0
+            total: 0,
+            currentOrders: null,
+            marketOrLimit: "market",
+            buyOrSell: "buy",
+            bestBid: '',
+            bestAsk: '',
+            bestSomething: '',
+            keepLooping: true
         };
+
+        this.setMarketOrLimit = this.setMarketOrLimit.bind(this);
+        this.setBuyOrSell = this.setBuyOrSell.bind(this);
+
     }
 
     goToProtected = () => {
@@ -76,10 +135,10 @@ class HomeView extends React.Component {
       // load all markets from the exchange
       let markets = await exchange.loadMarkets ()
 
-      while (true) {
+      while (this.state.keepLooping) {
           var symbol = this.state.currentSymbol;
-          const ticker = await exchange.fetchTicker (symbol)
-
+          const ticker = await exchange.fetchTicker (symbol);
+          console.log(ticker);
           this.setState({tickerBid: ticker.bid,tickerAsk: ticker.ask, tickerLast: ticker.last});
 
       }
@@ -96,6 +155,12 @@ class HomeView extends React.Component {
 
       // use the testnet for GDAX
       //gdax.urls['api'] = 'https://api-public.sandbox.gdax.com'
+      const orders = await gdax.fetchOrders ()
+      console.log(orders);
+      //orders.map (order => console.log(order));
+
+      this.setState({currentOrders: orders})
+
 
       try {
 
@@ -103,8 +168,8 @@ class HomeView extends React.Component {
           let gdaxBalance = await gdax.fetchBalance ()
 
           // output the result
-          log (gdax.name.green, 'balance', gdaxBalance.info);
-          this.setState({balance: JSON.stringify(gdaxBalance.info)})
+          //log (gdax.name.green, 'balance', gdaxBalance.info);
+          this.setState({balance: gdaxBalance.info})
 
       } catch (e) {
 
@@ -160,12 +225,22 @@ class HomeView extends React.Component {
                 const tableHeight = depth * 2 + 4 // bids + asks + headers
 
 
-                while (true) {
+                while (this.state.keepLooping) {
 
-                    const orderbook = await exchange.fetchOrderBook (symbol);
+                    const orderbook = await exchange.fetchOrderBook (this.state.currentSymbol );
 
-                    console.log( orderbook.bids);
-                    this.setState({asks: orderbook.asks.slice (0, depth).reverse (), bids: orderbook.bids.slice (0, depth)});
+                    console.log( orderbook);
+
+                    var bestBid = orderbook.bids[0];
+                    var bestAsk = orderbook.asks[0];
+
+                    if(this.state.buyOrSell === "buy") {
+                      this.setState({asks: orderbook.asks.slice (0, depth).reverse (), bids: orderbook.bids.slice (0, depth), bestSomething: bestBid});
+                    }
+                    if(this.state.buyOrSell === "sell") {
+                      this.setState({asks: orderbook.asks.slice (0, depth).reverse (), bids: orderbook.bids.slice (0, depth), bestSomething: bestAsk});
+                    }
+
 
 
                     //log (cursorUp.repeat (tableHeight))
@@ -199,7 +274,7 @@ class HomeView extends React.Component {
 
     componentWillMount () {
       this.fetchChart();
-      this.printOrderBook ("gdax", this.state.currentSymbol, 10)
+      this.printOrderBook ("gdax", this.state.currentSymbol, 10);
     }
 
     componentDidMount () {
@@ -207,7 +282,18 @@ class HomeView extends React.Component {
       this.fetchBalance();
     }
 
-    componentDidUpdate() {
+    componentDidUpdate(prevState, prevProps) {
+      if(prevState.currentSymbol != this.state.currentSymbol) {
+        this.setState({keepLooping: false});
+      }
+      if(prevState.keepLooping != this.state.keepLooping) {
+        if(this.state.keepLooping == false) {
+          this.setState({keepLooping: true})
+        } else {
+          this.fetchChart();
+          this.printOrderBook ("gdax", this.state.currentSymbol, 10);
+        }
+      }
 
     }
 
@@ -225,6 +311,50 @@ class HomeView extends React.Component {
       this.setState({total: price.toFixed(2)})
     }
 
+    setMarketOrLimit = (val) => {
+      console.log(val);
+      if(val === "market") {
+        document.getElementById("bestPrice").style.display = "none";
+      }
+      if(val === "limit") {
+        document.getElementById("bestPrice").style.display = "block";
+      }
+      this.setState({marketOrLimit: val });
+    }
+
+    setBuyOrSell = (val) => {
+      console.log(val);
+
+      this.setState({buyOrSell: val})
+
+    }
+
+    placeOrder () {
+      alert("Note, that some exchanges will not accept market orders (they allow limit orders only).");
+      let gdax = new ccxt.gdax  ({ // ... or new ccxt.gdax ()
+          'apiKey': '72df3c869ecd9bec44afa1bd18a9847f', // standard
+          'secret': 'rJ1wu/ZoD/66yIuAcrE2EsNkMJXkto6Z14ytJOaAGppIeaYwZWnMzPOK9axCWLRYMOi20mTnBvJ4/ZktyqMosA==',
+          'password': 'c2xmqas0ljv', // GDAX requires a password!
+      })
+
+      if(this.state.marketOrLimit === "market") {
+        if(this.state.buyOrSell === "buy") {
+          gdax.createMarketBuyOrder (this.state.currentSymbol, this.state.total)
+        }
+        if(this.state.buyOrSell === "sell") {
+          gdax.createMarketSellOrder (this.state.currentSymbol, this.state.total)
+        }
+      }
+
+      if(this.state.marketOrLimit === "limit") {
+        if(this.state.buyOrSell === "buy") {
+
+        }
+        if(this.state.buyOrSell === "sell") {
+
+        }
+      }
+    }
 
     render() {
         if(this.state.data) {
@@ -249,12 +379,12 @@ class HomeView extends React.Component {
         const { selectedOption } = this.state;
       	const value = selectedOption && selectedOption.value;
         return (
-            <div className="container">
+            <div style={{padding:'30px'}} className="container table-dark">
               <div className="row">
                 <div style={{marginBottom: '5vh'}} className="col-md-4 pull-left">
                 <Select
                   name="form-field-name"
-                  value={value}
+                  value={this.state.currentSymbol}
                   onChange={this.handleChange}
                   options={[
                     { value: 'BTC/USD', label: 'BTC/USD' },
@@ -266,11 +396,17 @@ class HomeView extends React.Component {
                   <p> Last: ${this.state.tickerLast} </p>
                 </div>
 
+                <div style={{marginBottom: '5vh'}} className="col-md-8 pull-right">
 
-                <div className="col-md-8 pull-right">
-                  <div style={{minHeight: '30vh', width: '100%', border: '1px solid #ccc', font: '16px/26px Georgia, Garamond, Serif', overflow: 'auto'}}>
-                    {this.state.balance}
-                  </div>
+                { this.state.balance ?
+
+                  <ReactTable
+                    data={this.state.balance}
+                    columns={columnsBalance}
+                    pageSize={4}
+                  />
+                  :null
+                }
                 </div>
 
               </div>
@@ -287,23 +423,28 @@ class HomeView extends React.Component {
 
                 <div className="table-dark p-2 flex-1">
                     <div className=" px-1">
-                      <button className="col-sm-6 btn order ">Market</button>
-                      <button className="col-sm-6 btn order text-gray bg-dark">Limit</button>
+                      <button className="col-sm-6 btn buy bg-green"  onClick = {() => this.setMarketOrLimit("market")}>Market</button>
+                      <button className="col-sm-6 btn sell text-gray bg-dark" onClick = {() => this.setMarketOrLimit("limit")} >Limit</button>
                     </div>
                     <div className=" px-1">
-                      <button className="col-sm-6 btn buy bg-green">Buy</button>
-                      <button className="col-sm-6 btn sell text-gray bg-dark">Sell</button>
+                      <button className="col-sm-6 btn buy bg-green" onClick = {() => this.setBuyOrSell("buy")} >Buy</button>
+                      <button className="col-sm-6 btn sell text-gray bg-dark" onClick = {() => this.setBuyOrSell("sell")} >Sell</button>
                     </div>
 
                     <div style={{marginTop:'5vh', marginBottom:'5vh', display:'inline-block'}} className="form-group">
+
                         <div className=" px-1"><label className="form-label text-light">Amount {this.state.currentSymbol.slice(0,3)}</label>
                           {/*<button className="btn btn-order btn-nofocus m-2">Max</button>*/}
                         </div>
                         <input style={{color: '#232323'}}  onChange={this.handleOrderInput}  type="number" step="any" className="form-input" />
+
+                        <div className=" px-1">
+                          <label id="bestPrice" style={{display:'none', marginTop:'2vh'}} className="form-label text-light">Best Price: {this.state.bestSomething}</label>
+                        </div>
                     </div>
                     <br/>
                     <div  style={{marginBottom:'5vh', display:'inline-block'}} className="form-group"><label className="form-label text-light">Total ${this.state.total}</label></div>
-                    <div className=" px-1"><button className="col-sm-6 col-mx-auto btn">Place Order</button></div>
+                    <div className=" px-1"><button onClick={this.placeOrder} className="col-sm-6 col-mx-auto btn">Place Order</button></div>
                 </div>
 
                 </div>
@@ -385,29 +526,14 @@ class HomeView extends React.Component {
               </div>
               <br/><br/><br/>
               <div className="row">
-                <div className="container d-flex order-list table-dark">
-                  <div className="flex-1 scroll-y">
-                    <div className="row border-bottom-thick px-2">
-                      <div className="col-sm-1 text-center text-light">Type</div>
-                      <div className="col-sm-2 text-center text-light">Size</div>
-                      <div className="col-sm-2 text-center text-light">Filled (BTC)</div>
-                      <div className="col-sm-2 text-center text-light">Price (USD)</div>
-                      <div className="col-sm-2 text-center text-light">Fee (USD)</div>
-                      <div className="col-sm-1 text-center text-light">Time</div>
-                      <div className="col-sm-1 text-center text-light">Status</div>
-                    </div>
-                    <hr/>
-                    <div className="row border-bottom-thick px-2">
-                      <div className="col-sm-1 text-center text-light">plchd</div>
-                      <div className="col-sm-2 text-center text-light">plchd</div>
-                      <div className="col-sm-2 text-center text-light">plchd</div>
-                      <div className="col-sm-2 text-center text-light">plchd</div>
-                      <div className="col-sm-2 text-center text-light">plchd</div>
-                      <div className="col-sm-1 text-center text-light">plchd</div>
-                      <div className="col-sm-1 text-center text-light">plchd</div>
-                    </div>
-                  </div>
-                </div>
+              { this.state.currentOrders ?
+
+                <ReactTable
+                  data={this.state.currentOrders}
+                  columns={columns}
+                />
+                :null
+              }
               </div>
             </div>
         );

@@ -72,6 +72,7 @@
     "react-router-redux": "5.0.0-alpha.6",
     "react-select": "^1.2.0",
     "react-stockcharts": "^0.7.0-beta.22",
+    "react-table": "^6.7.6",
     "react-trading-ui": "^0.1.5",
     "redux": "3.7.2",
     "redux-thunk": "2.2.0",

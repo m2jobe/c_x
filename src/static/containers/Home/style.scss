@@ -13,7 +13,16 @@
 }
 
 .px-1 > .btn {
-  border: 1px solid white;
+  border: 1px solid black;
   color: black;
   font-weight:900;
+}
+
+
+.ReactTable .-pagination input, .ReactTable .-pagination select {
+   color: black !important;
+}
+
+.ReactTable .-pagination .-btn {
+    background: lightgray !important;
 }
