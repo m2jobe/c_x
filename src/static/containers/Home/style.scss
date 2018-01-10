@@ -1,3 +1,19 @@
-.page-logo {
-  max-width: 200px;
+.btn-order {
+  height: 1.1rem;
+  font-size: .7rem;
+  line-height: 0.1rem;
+}
+
+.order-list {
+  padding:2vw;
+}
+
+.btn {
+  border-radius: 0px !important;
+}
+
+.px-1 > .btn {
+  border: 1px solid white;
+  color: black;
+  font-weight:900;
 }

@@ -34,7 +34,7 @@ class App extends React.Component {
     };
 
     goToProtected = () => {
-        this.props.dispatch(push('/protected'));
+        this.props.dispatch(push('/calculator'));
     };
 
     render() {
@@ -42,7 +42,7 @@ class App extends React.Component {
             active: this.props.location && this.props.location.pathname === '/'
         });
         const protectedClass = classNames({
-            active: this.props.location && this.props.location.pathname === '/protected'
+            active: this.props.location && this.props.location.pathname === '/calculator'
         });
         const loginClass = classNames({
             active: this.props.location && this.props.location.pathname === '/login'
@@ -65,7 +65,7 @@ class App extends React.Component {
                                 <span className="icon-bar" />
                             </button>
                             <a className="navbar-brand" onClick={this.goToIndex}>
-                                Django React Redux Demo
+                                Davids Exchange
                             </a>
                         </div>
                         <div className="collapse navbar-collapse" id="top-navbar">
@@ -73,17 +73,17 @@ class App extends React.Component {
                                 <ul className="nav navbar-nav navbar-right">
                                     <li className={homeClass}>
                                         <a className="js-go-to-index-button" onClick={this.goToIndex}>
-                                            <i className="fa fa-home" /> Home
+                                            <i className="fa fa-home" /> GDAX Exchange
+                                        </a>
+                                    </li>
+                                    <li >
+                                        <a className="js-go-to-protected-button" onClick={this.goToIndex}>
+                                            <i className="fa fa-lock" /> Cryptopia Exchange
                                         </a>
                                     </li>
                                     <li className={protectedClass}>
                                         <a className="js-go-to-protected-button" onClick={this.goToProtected}>
-                                            <i className="fa fa-lock" /> Protected
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a className="js-logout-button" onClick={this.logout}>
-                                            Logout
+                                            <i className="fa fa-lock" /> Arbitrage Calculator
                                         </a>
                                     </li>
                                 </ul>
@@ -91,12 +91,17 @@ class App extends React.Component {
                                 <ul className="nav navbar-nav navbar-right">
                                     <li className={homeClass}>
                                         <a className="js-go-to-index-button" onClick={this.goToIndex}>
-                                            <i className="fa fa-home" /> Home
+                                            <i className="fa fa-home" /> GDAX Exchange
                                         </a>
                                     </li>
-                                    <li className={loginClass}>
-                                        <a className="js-login-button" onClick={this.goToLogin}>
-                                            <i className="fa fa-home" /> Login
+                                    <li >
+                                        <a className="js-go-to-protected-button" onClick={this.goToIndex}>
+                                            <i className="fa fa-lock" /> Cryptopia Exchange
+                                        </a>
+                                    </li>
+                                    <li className={protectedClass}>
+                                        <a className="js-go-to-protected-button" onClick={this.goToProtected}>
+                                            <i className="fa fa-lock" /> Arbitrage Calculator
                                         </a>
                                     </li>
                                 </ul>

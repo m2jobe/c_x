@@ -7,7 +7,7 @@ export default(
     <Switch>
         <Route exact path="/" component={HomeView} />
         <Route path="/login" component={LoginView} />
-        <Route path="/protected" component={requireAuthentication(ProtectedView)} />
+        <Route path="/calculator" component={(ProtectedView)} />
         <Route path="*" component={NotFoundView} />
     </Switch>
 

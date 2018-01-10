@@ -1,0 +1,4 @@
+#!/home/muhammed/Documents/tm/c_x/src/djangoreactredux/djrenv/bin/python3
+
+import dodgy.run
+dodgy.run.run()

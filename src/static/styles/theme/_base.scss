@@ -4,3 +4,120 @@ html {
   font-size: 100%;
   font-family: $font-family-regular;
 }
+
+.table-dark {
+    color: #fff;
+    background-color: #212529;
+}
+
+// colors
+
+// primary text color
+$primary-color: #000000;
+// text active color;
+$secondary-color: hsl(0, 0%, 68%);
+// white / light text
+$light-color: #fff;
+// dark background
+$primary-dark: #3A444D;
+// lighter dark color
+$ligter-dark: lighten($primary-dark, 10%);
+// lighter dark color alpha
+$ligter-dark-a: transparentize($ligter-dark, 0.7);
+// darker background
+$secondary-dark: darken($primary-dark, 10%);
+// darkest background
+$third-dark: darken($secondary-dark, 10%);
+// red
+$red: hsl(15, 83%, 61%);
+// green
+$green: hsl(101, 84%, 71%);
+
+// heights
+
+// select / dropdown height
+$select-height: 30px;
+
+// chart height
+$chart-height: 400px;
+
+$orderbook-height: 400px;
+
+.order-book {
+  height: $orderbook-height;
+  overflow-y: hidden;
+
+  .asks {
+    border-bottom: 1px solid $ligter-dark-a;
+  }
+  .bids {
+    border-top: 1px solid $ligter-dark-a;
+  }
+  .orderbook-row {
+
+    .ask {
+      display: table-cell;
+      color: $red;
+      font-size: 0.6rem;
+      .bar {
+        top: 1px;
+        position: relative;
+        background-color: $red;
+      }
+    }
+    .bid {
+      display: table-cell;
+      color: $green;
+      font-size: 0.6rem;
+      .bar {
+        top: 1px;
+        position: relative;
+        background-color: $green;
+      }
+    }
+    .bar-container {
+      height: 100%;
+    }
+  }
+  .bar {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+  .spread {
+    border-top: 2px solid $ligter-dark;
+    border-bottom: 2px solid $ligter-dark;
+    span {
+      font-size: 11px;
+      color: #FFFFFF;
+    }
+  }
+}
+.order-book:hover {
+  overflow-y: overlay;
+}
+
+.float-right {
+  float: right;
+}
+
+.page-logo {
+  max-width: 200px;
+}
+
+.buy.btn:focus, .buy.btn:hover {
+    background: $green;
+    border-color: black;
+    text-decoration: none;
+}
+
+.sell.btn:focus, .sell.btn:hover {
+    background: $red;
+    border-color: black;
+    text-decoration: none;
+}
+
+.order.btn:focus, .order.btn:hover {
+    background: #fff;
+    border-color: black;
+    text-decoration: none;
+}
