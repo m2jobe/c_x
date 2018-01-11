@@ -1,0 +1,28 @@
+.btn-order {
+  height: 1.1rem;
+  font-size: .7rem;
+  line-height: 0.1rem;
+}
+
+.order-list {
+  padding:2vw;
+}
+
+.btn {
+  border-radius: 0px !important;
+}
+
+.px-1 > .btn {
+  border: 1px solid black;
+  color: black;
+  font-weight:900;
+}
+
+
+.ReactTable .-pagination input, .ReactTable .-pagination select {
+   color: black !important;
+}
+
+.ReactTable .-pagination .-btn {
+    background: lightgray !important;
+}

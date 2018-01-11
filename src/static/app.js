@@ -27,6 +27,7 @@ class App extends React.Component {
 
     goToIndex = () => {
         this.props.dispatch(push('/'));
+        location.replace("/")
     };
 
     goToLogin = () => {
@@ -37,12 +38,20 @@ class App extends React.Component {
         this.props.dispatch(push('/calculator'));
     };
 
+    goToCryptopia = () => {
+        //this.props.dispatch(push('/cryptopia'));
+        location.replace("/cryptopia")
+    };
+
     render() {
         const homeClass = classNames({
             active: this.props.location && this.props.location.pathname === '/'
         });
         const protectedClass = classNames({
             active: this.props.location && this.props.location.pathname === '/calculator'
+        });
+        const cryptopiaClass = classNames({
+            active: this.props.location && this.props.location.pathname === '/cryptopia'
         });
         const loginClass = classNames({
             active: this.props.location && this.props.location.pathname === '/login'
@@ -76,8 +85,8 @@ class App extends React.Component {
                                             <i className="fa fa-home" /> GDAX Exchange
                                         </a>
                                     </li>
-                                    <li >
-                                        <a className="js-go-to-protected-button" onClick={this.goToIndex}>
+                                    <li className={cryptopiaClass}>
+                                        <a className="js-go-to-protected-button" onClick={this.goToCryptopia}>
                                             <i className="fa fa-lock" /> Cryptopia Exchange
                                         </a>
                                     </li>
@@ -94,8 +103,8 @@ class App extends React.Component {
                                             <i className="fa fa-home" /> GDAX Exchange
                                         </a>
                                     </li>
-                                    <li >
-                                        <a className="js-go-to-protected-button" onClick={this.goToIndex}>
+                                    <li className={cryptopiaClass}>
+                                        <a className="js-go-to-protected-button" onClick={this.goToCryptopia}>
                                             <i className="fa fa-lock" /> Cryptopia Exchange
                                         </a>
                                     </li>

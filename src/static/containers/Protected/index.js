@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import PropTypes from 'prop-types';
+import ccxt from 'ccxt';
 
 import * as actionCreators from '../../actions/data';
 
@@ -9,7 +10,7 @@ class ProtectedView extends React.Component {
     static propTypes = {
         isFetching: PropTypes.bool.isRequired,
         data: PropTypes.string,
-        token: PropTypes.string.isRequired,
+        //token: PropTypes.string.isRequired,
         actions: PropTypes.shape({
             dataFetchProtectedData: PropTypes.func.isRequired
         }).isRequired
@@ -66,32 +67,169 @@ class ProtectedView extends React.Component {
     // Warning: setState(...): Cannot update during an existing state transition (such as within `render`).
     // Render methods should be a pure function of props and state.
     componentWillMount() {
-        const token = this.props.token;
+        //const token = this.props.token;
         //this.props.actions.dataFetchProtectedData(token);
     }
+
+    handleInputChange = (event) => {
+      const usd = event.target.value;
+      this.setState(prevState => ({
+        startUSD: usd,
+      }));
+    }
+
+    handleCalculate = () => {
+      var startBTC = this.state.startBTC;
+      var startLTC = this.state.startLTC;
+      var startUSD = this.state.startUSD;
+      var startCryptopia = this.state.startCryptopia;
+      var toIncrease = 0.005;
+      var finishUSD = 0;
+      var finishDollarChange = 0;
+      var finishPercChange = 0;
+
+
+      var usdToBTCBidOrAskPrice=  0;
+      var      usdToBTCPoint5PercFee= 0;
+      var      usdToBTCAfterFeeMultiplier=  0;
+      var      usdToBTCAfterFeeTotal=  0;
+
+      usdToBTCBidOrAskPrice = parseFloat(startBTC + (startBTC * 0.002));
+      usdToBTCPoint5PercFee = (startUSD/usdToBTCBidOrAskPrice) * toIncrease;
+      console.log("start usd " +startUSD)
+      console.log("start usd " +usdToBTCBidOrAskPrice)
+      console.log("start usd " +toIncrease)
+
+
+      usdToBTCAfterFeeMultiplier = (startUSD/usdToBTCBidOrAskPrice) - usdToBTCPoint5PercFee;
+      usdToBTCAfterFeeTotal = usdToBTCAfterFeeMultiplier * startBTC;
+
+      var      btcCoinBToCryptopiaBTC =  0;
+      var      btcCoinBToCryptopiaBTCFee=  0;
+      var      btcCoinBToCryptopiaBTCFeeTotal= 0;
+      var      btcCoinBToCryptopiaBTCAfterFee=  0;
+      var      btcCoinBToCryptopiaBTCAfterFeeTotal=  0;
+
+      btcCoinBToCryptopiaBTC = usdToBTCAfterFeeMultiplier;
+      btcCoinBToCryptopiaBTCFee = 0.0009431;
+      btcCoinBToCryptopiaBTCFeeTotal = btcCoinBToCryptopiaBTCFee * startBTC;
+      btcCoinBToCryptopiaBTCAfterFee = btcCoinBToCryptopiaBTC - btcCoinBToCryptopiaBTCFee;
+      btcCoinBToCryptopiaBTCAfterFeeTotal = btcCoinBToCryptopiaBTCAfterFee * startBTC;
+
+
+      var      crytopiaBTCToLTCFEE=  0;
+      var      crytopiaBTCToLTCFEETotal=  0;
+      var      crytopiaBTCToLTCFEEPoint5Perc=  0;
+      var      crytopiaBTCToLTCAfterFEE=  0;
+      var      crytopiaBTCToLTCAfterFEETotal=  0;
+
+      crytopiaBTCToLTCFEE = btcCoinBToCryptopiaBTCAfterFee;
+      crytopiaBTCToLTCFEETotal = btcCoinBToCryptopiaBTCAfterFee * startBTC;
+      crytopiaBTCToLTCFEEPoint5Perc = btcCoinBToCryptopiaBTCAfterFee * toIncrease;
+      crytopiaBTCToLTCAfterFEE = (crytopiaBTCToLTCFEE - crytopiaBTCToLTCFEEPoint5Perc) / startCryptopia;
+      crytopiaBTCToLTCAfterFEETotal = crytopiaBTCToLTCAfterFEE * startLTC;
+
+      var      sendLTCToCoinbaseLTCVal1=  0;
+      var      sendLTCToCoinbaseLTCVal2 = 0;
+      var      sendLTCToCoinbaseLTCFeePoint2 = 0;
+      var      sendLTCToCoinbaseLTCFeePoint2Total=  0;
+      var      sendLTCToCoinbaseLTCAfterFee = 0;
+      var      sendLTCToCoinbaseLTCAfterFeeTotal=  0;
+
+      sendLTCToCoinbaseLTCVal1 = crytopiaBTCToLTCAfterFEE;
+      sendLTCToCoinbaseLTCVal2 = sendLTCToCoinbaseLTCVal1 * startLTC;
+      sendLTCToCoinbaseLTCFeePoint2 = 0.02;
+      sendLTCToCoinbaseLTCFeePoint2Total = sendLTCToCoinbaseLTCFeePoint2 * startLTC;
+      sendLTCToCoinbaseLTCAfterFee = crytopiaBTCToLTCAfterFEE - sendLTCToCoinbaseLTCFeePoint2;
+      sendLTCToCoinbaseLTCAfterFeeTotal = sendLTCToCoinbaseLTCAfterFee * startLTC;
+
+      var      sellOnCoinbaseForUSDLTCVal1=  0;
+      var      sellOnCoinbaseForUSDLTCVal2=  0;
+      var      sellOnCoinBaseBidAskPrice= 0;
+      var      sellOnCoinBasePoint5PercFee= 0;
+      var      sellOnCoinBaseAfterFee=  0;
+
+      sellOnCoinbaseForUSDLTCVal1 = sendLTCToCoinbaseLTCAfterFee;
+      sellOnCoinbaseForUSDLTCVal2 = sellOnCoinbaseForUSDLTCVal1 * startLTC;
+      sellOnCoinBaseBidAskPrice = startLTC-(startLTC*0.0025);
+      sellOnCoinBasePoint5PercFee = (sellOnCoinbaseForUSDLTCVal1*sellOnCoinBaseBidAskPrice) * toIncrease;
+      sellOnCoinBaseAfterFee = (sellOnCoinbaseForUSDLTCVal1*sellOnCoinBaseBidAskPrice) - sellOnCoinBasePoint5PercFee;
+
+      finishUSD = sellOnCoinBaseAfterFee;
+      finishDollarChange = finishUSD - startUSD;
+      finishPercChange = (finishDollarChange / startUSD) * 100;
+
+      finishUSD = finishUSD.toFixed(2)
+      finishDollarChange = finishDollarChange.toFixed(2)
+      finishPercChange = finishPercChange.toFixed(2)
+
+
+
+      this.setState({finishUSD,finishDollarChange,finishPercChange,usdToBTCBidOrAskPrice,usdToBTCPoint5PercFee,usdToBTCAfterFeeMultiplier,usdToBTCAfterFeeTotal,btcCoinBToCryptopiaBTC ,btcCoinBToCryptopiaBTCFee,btcCoinBToCryptopiaBTCFeeTotal,btcCoinBToCryptopiaBTCAfterFee,btcCoinBToCryptopiaBTCAfterFeeTotal,crytopiaBTCToLTCFEE,crytopiaBTCToLTCFEETotal,crytopiaBTCToLTCFEEPoint5Perc,crytopiaBTCToLTCAfterFEE,crytopiaBTCToLTCAfterFEETotal,sendLTCToCoinbaseLTCVal1,sendLTCToCoinbaseLTCVal2,sendLTCToCoinbaseLTCFeePoint2,sendLTCToCoinbaseLTCFeePoint2Total,sendLTCToCoinbaseLTCAfterFee,sendLTCToCoinbaseLTCAfterFeeTotal,sellOnCoinbaseForUSDLTCVal1,sellOnCoinbaseForUSDLTCVal2,sellOnCoinBaseBidAskPrice,sellOnCoinBasePoint5PercFee,sellOnCoinBaseAfterFee})
+
+    }
+
+
+    async fetchTicker () {
+      var symbol1 = "BTC/USD";
+      var symbol2 = "LTC/USD";
+      // instantiate the exchange by id
+      let exchange = new ccxt['gdax'] ({ enableRateLimit: true })
+      // load all markets from the exchange
+      let markets = await exchange.loadMarkets ()
+
+      while (true) {
+          var ticker = [];
+
+          ticker.push(await exchange.fetchTicker (symbol1));
+          ticker.push(await exchange.fetchTicker (symbol2));
+
+          if(ticker) {
+          var btcAsk = ticker[0].ask;
+          var btcBid = ticker[0].bid;
+
+          var ltcAsk = ticker[1].ask;
+          var ltcBid = ticker[1].bid;
+          console.log(btcAsk);
+          console.log(ltcAsk);
+          if(btcAsk && ltcAsk) {
+            this.setState({startBTC: btcAsk, startLTC: ltcAsk});
+            this.handleCalculate();
+          }
+          }
+
+      }
+
+    }
+
+    componentWillMount() {
+      this.fetchTicker();
+    }
+
+
 
     render() {
         return (
             <div className="protected">
-              <div className="container table-dark">
-                <div className="rows">
-                  <div className="form-horizontal col-mx-auto col-sm-6 col-md-10" >
-                    <div className="form-group">
-                      <button type="submit" className="col-sm-3 col-mx-auto btn btn-primary" onClick={this.handleCalculate}>
+              <div style={{padding: '40px' }} className="container table-dark">
+                    <div className="row">
+                      <button type="submit" className="col-sm-12 btn btn-primary" onClick={this.handleCalculate}>
                         Calculate
                       </button>
                     </div>
-                    <div className="form-group">
+                    <br/>
+                    <div className="row" style={{marginTop:'7vh'}}>
                       <label className="form-label col-sm-2 text-light" htmlFor="session">Start USD</label>
                       <input
-                        className="col-10 mx-2"
+                        className="col-sm-10 form-control"
                         name="startUSD"
                         placeholder="Start USD"
                         value={String(this.state.startUSD)}
                         onChange={this.handleInputChange}
+                        type="number" step="any"
                       />
                     </div>
-                    <table>
+                    <table className="table" style={{marginTop:'5vh' }}>
                       <tbody>
                         <tr>
                           <th>Start USD</th>
@@ -108,7 +246,7 @@ class ProtectedView extends React.Component {
                       </tbody>
                     </table>
                     <hr style={{color: "white", marginTop:'5vh', marginBottom: '5vh', display:'block'}} />
-                    <table>
+                    <table className="table" style={{marginTop:'5vh' }}>
                       <tbody>
                         <tr>
                           <th>Finish USD</th>
@@ -135,7 +273,7 @@ class ProtectedView extends React.Component {
                     </table>
                     <hr style={{color: "white", marginTop:'5vh', marginBottom: '5vh', display:'block'}} />
                     <label style={{color: "white", marginTop:'1vh', marginBottom: '1vh', display:'block'}} > Use USD on CoinBase To buy BTC </label>
-                    <table>
+                    <table className="table" style={{marginTop:'5vh' }}>
                       <tbody>
                         <tr>
                           <th>USD</th>
@@ -161,7 +299,7 @@ class ProtectedView extends React.Component {
                     </table>
                     <hr style={{color: "white", marginTop:'5vh', marginBottom: '5vh', display:'block'}} />
                     <label style={{color: "white", marginTop:'1vh', marginBottom: '1vh', display:'block'}} > Send BTC from CoinBase to Cryptopia </label>
-                    <table>
+                    <table className="table" style={{marginTop:'5vh' }}>
                       <tbody>
                         <tr>
                           <th>BTC</th>
@@ -182,7 +320,7 @@ class ProtectedView extends React.Component {
                     </table>
                     <hr style={{color: "white", marginTop:'5vh', marginBottom: '5vh', display:'block'}} />
                     <label style={{color: "white", marginTop:'1vh', marginBottom: '1vh', display:'block'}} > Use BTC on Cryptopia to buy LTC </label>
-                    <table>
+                    <table className="table" style={{marginTop:'5vh' }}>
                       <tbody>
                         <tr>
                           <th>BTC</th>
@@ -204,7 +342,7 @@ class ProtectedView extends React.Component {
 
                     <hr style={{color: "white", marginTop:'5vh', marginBottom: '5vh', display:'block'}} />
                     <label style={{color: "white", marginTop:'1vh', marginBottom: '1vh', display:'block'}} > Send LTC to Coinbase </label>
-                    <table>
+                    <table className="table" style={{marginTop:'5vh' }}>
                       <tbody>
                         <tr>
                           <th>LTC</th>
@@ -226,7 +364,7 @@ class ProtectedView extends React.Component {
 
                     <hr style={{color: "white", marginTop:'5vh', marginBottom: '5vh', display:'block'}} />
                     <label style={{color: "white", marginTop:'1vh', marginBottom: '1vh', display:'block'}} > Send on CoinBase for USD </label>
-                    <table>
+                    <table className="table" style={{marginTop:'5vh' }}>
                       <tbody>
                         <tr>
                           <th>LTC</th>
@@ -250,8 +388,6 @@ class ProtectedView extends React.Component {
                         </tr>
                       </tbody>
                     </table>
-                  </div>
-                </div>
               </div>
             </div>
         );

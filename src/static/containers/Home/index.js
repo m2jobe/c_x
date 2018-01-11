@@ -10,7 +10,6 @@ import Select from 'react-select';
 import ccxt from 'ccxt';
 //import ReactHighcharts from 'react-highcharts';
 import moment from 'moment';
-const OrderBook = require('react-trading-ui')
 import ReactTable from 'react-table'
 const ReactHighcharts = require("react-highcharts");
 require("highcharts/js/highcharts-more")(ReactHighcharts.Highcharts);
@@ -30,13 +29,14 @@ const columns = [ {
 },{
   Header: 'Date',
   accessor: 'datetime', // String-based value accessors!,
-  width: 150
+  width: 300
 }, {
   Header: 'Price',
   accessor: 'price'
 },{
   Header: 'Filled',
-  accessor: 'filled' // String-based value accessors!
+  accessor: 'filled', // String-based value accessors!,
+  width:200
 }, {
   Header: 'Price',
   accessor: 'price'
@@ -82,7 +82,6 @@ class HomeView extends React.Component {
         super(props);
         this.state = {
             data: null,
-            chartName: '',
             asks: null,
             bids: null,
             currentSymbol : 'BTC/USD',
@@ -103,6 +102,7 @@ class HomeView extends React.Component {
 
         this.setMarketOrLimit = this.setMarketOrLimit.bind(this);
         this.setBuyOrSell = this.setBuyOrSell.bind(this);
+        this.placeOrder = this.placeOrder.bind(this);
 
     }
 
@@ -135,7 +135,7 @@ class HomeView extends React.Component {
       // load all markets from the exchange
       let markets = await exchange.loadMarkets ()
 
-      while (this.state.keepLooping) {
+      while (true) {
           var symbol = this.state.currentSymbol;
           const ticker = await exchange.fetchTicker (symbol);
           console.log(ticker);
@@ -159,7 +159,7 @@ class HomeView extends React.Component {
       console.log(orders);
       //orders.map (order => console.log(order));
 
-      this.setState({currentOrders: orders})
+      //this.setState({currentOrders: orders})
 
 
       try {
@@ -169,7 +169,7 @@ class HomeView extends React.Component {
 
           // output the result
           //log (gdax.name.green, 'balance', gdaxBalance.info);
-          this.setState({balance: gdaxBalance.info})
+          this.setState({balance: gdaxBalance.info,currentOrders: orders})
 
       } catch (e) {
 
@@ -225,14 +225,14 @@ class HomeView extends React.Component {
                 const tableHeight = depth * 2 + 4 // bids + asks + headers
 
 
-                while (this.state.keepLooping) {
+                while (true) {
 
                     const orderbook = await exchange.fetchOrderBook (this.state.currentSymbol );
 
                     console.log( orderbook);
 
                     var bestBid = orderbook.bids[0];
-                    var bestAsk = orderbook.asks[0];
+                    var bestAsk = orderbook.asks.slice (0, depth)[depth-1];
 
                     if(this.state.buyOrSell === "buy") {
                       this.setState({asks: orderbook.asks.slice (0, depth).reverse (), bids: orderbook.bids.slice (0, depth), bestSomething: bestBid});
@@ -269,31 +269,30 @@ class HomeView extends React.Component {
       const series = ohlcv.slice (-80).map (x => [ moment(x[0]).format('YYYY-MM-DD HH:mm:ss'), x[1], x[2], x[3],x[4] ])         // closing price
       console.log(series);
       const bitcoinRate = ('₿ = $' + lastPrice).green
-      this.setState({data: series, chartName: 'GDAX OHLC'})
+      this.setState({data: series})
     }
 
     componentWillMount () {
       this.fetchChart();
-      this.printOrderBook ("gdax", this.state.currentSymbol, 10);
+      ///
     }
 
     componentDidMount () {
-      this.fetchTicker();
-      this.fetchBalance();
+        this.fetchBalance();
     }
 
-    componentDidUpdate(prevState, prevProps) {
-      if(prevState.currentSymbol != this.state.currentSymbol) {
-        this.setState({keepLooping: false});
-      }
-      if(prevState.keepLooping != this.state.keepLooping) {
-        if(this.state.keepLooping == false) {
-          this.setState({keepLooping: true})
-        } else {
-          this.fetchChart();
+    componentDidUpdate(prevProps, prevState) {
+      if(prevState.data == null ){
+        if(prevState.data != this.state.data) {
+          this.fetchTicker();
           this.printOrderBook ("gdax", this.state.currentSymbol, 10);
+
         }
       }
+      if(prevState.currentSymbol != this.state.currentSymbol) {
+        this.fetchChart();
+      }
+
 
     }
 
@@ -314,17 +313,29 @@ class HomeView extends React.Component {
     setMarketOrLimit = (val) => {
       console.log(val);
       if(val === "market") {
+        document.getElementById("marketDiv").style.backgroundColor = "blue";
+        document.getElementById("limitDiv").style.backgroundColor = "white";
         document.getElementById("bestPrice").style.display = "none";
       }
       if(val === "limit") {
+        document.getElementById("marketDiv").style.backgroundColor = "white";
+        document.getElementById("limitDiv").style.backgroundColor = "blue";
         document.getElementById("bestPrice").style.display = "block";
       }
+
       this.setState({marketOrLimit: val });
     }
 
     setBuyOrSell = (val) => {
       console.log(val);
 
+      if(val === "buy") {
+        document.getElementById("buyDiv").style.backgroundColor = "#2ecc71";
+        document.getElementById("sellDiv").style.backgroundColor = "white";
+      } else {
+        document.getElementById("buyDiv").style.backgroundColor = "white";
+        document.getElementById("sellDiv").style.backgroundColor = "#e67e22";
+      }
       this.setState({buyOrSell: val})
 
     }
@@ -364,10 +375,10 @@ class HomeView extends React.Component {
             },
 
             title: {
-                text: this.state.chartName
+                text: "GDAX OHLC - " + this.state.currentSymbol
             },
             series: [{
-                name: this.state.chartName,
+                name: "GDAX OHLC - " + this.state.currentSymbol,
                 data: this.state.data,
                 dataGrouping: {
 
@@ -389,6 +400,14 @@ class HomeView extends React.Component {
                   options={[
                     { value: 'BTC/USD', label: 'BTC/USD' },
                     { value: 'LTC/USD', label: 'LTC/USD' },
+                    { value: 'ETH/USD', label: 'ETH/USD' },
+                    { value: 'BCH/USD', label: 'BCH/USD' },
+                    { value: 'LTC/BTC', label: 'LTC/BTC' },
+                    { value: 'BTC/EUR', label: 'BTC/EUR' },
+                    { value: 'BTC/GBP', label: 'BTC/GBP' },
+                    { value: 'ETH/BTC', label: 'ETH/BTC' },
+                    { value: 'ETH/EUR', label: 'ETH/EUR' },
+                    { value: 'LTC/EUR', label: 'LTC/EUR' }
                   ]}
                 />
                   <p> Bid: ${this.state.tickerBid} </p>
@@ -405,7 +424,8 @@ class HomeView extends React.Component {
                     columns={columnsBalance}
                     pageSize={4}
                   />
-                  :null
+                  :
+                  <div>Loading...</div>
                 }
                 </div>
 
@@ -423,12 +443,12 @@ class HomeView extends React.Component {
 
                 <div className="table-dark p-2 flex-1">
                     <div className=" px-1">
-                      <button className="col-sm-6 btn buy bg-green"  onClick = {() => this.setMarketOrLimit("market")}>Market</button>
-                      <button className="col-sm-6 btn sell text-gray bg-dark" onClick = {() => this.setMarketOrLimit("limit")} >Limit</button>
+                      <button className="col-sm-6 btn  "  id="marketDiv" onClick = {() => this.setMarketOrLimit("market")}>Market</button>
+                      <button className="col-sm-6 btn  text-gray bg-dark" id="limitDiv"  onClick = {() => this.setMarketOrLimit("limit")} >Limit</button>
                     </div>
                     <div className=" px-1">
-                      <button className="col-sm-6 btn buy bg-green" onClick = {() => this.setBuyOrSell("buy")} >Buy</button>
-                      <button className="col-sm-6 btn sell text-gray bg-dark" onClick = {() => this.setBuyOrSell("sell")} >Sell</button>
+                      <button className="col-sm-6 btn " id="buyDiv" onClick = {() => this.setBuyOrSell("buy")} >Buy</button>
+                      <button className="col-sm-6 btn  text-gray bg-dark" id="sellDiv" onClick = {() => this.setBuyOrSell("sell")} >Sell</button>
                     </div>
 
                     <div style={{marginTop:'5vh', marginBottom:'5vh', display:'inline-block'}} className="form-group">
@@ -455,7 +475,7 @@ class HomeView extends React.Component {
                   <table className="table table-dark">
                     <thead style={{color: 'white'}}>
                       <tr>
-                        <th scope="col">Ask</th>
+                        <th scope="col">{this.state.currentSymbol} - Ask</th>
                         <th scope="col"></th>
                         <th scope="col"></th>
                       </tr>
@@ -498,7 +518,7 @@ class HomeView extends React.Component {
                   <table className="table table-dark">
                     <thead style={{color: 'white'}}>
                       <tr>
-                        <th scope="col">Bid</th>
+                        <th scope="col">{this.state.currentSymbol} - Bid</th>
                         <th scope="col"></th>
                         <th scope="col"></th>
                       </tr>
@@ -532,7 +552,8 @@ class HomeView extends React.Component {
                   data={this.state.currentOrders}
                   columns={columns}
                 />
-                :null
+                :
+                <div> Loading... </div>
               }
               </div>
             </div>
