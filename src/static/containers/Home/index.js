@@ -91,6 +91,8 @@ class HomeView extends React.Component {
             selectedOption :'BTC/USD',
             balance: '',
             total: 0,
+            setAmount: 0,
+            setPriceLimit:0,
             currentOrders: null,
             marketOrLimit: "market",
             buyOrSell: "buy",
@@ -293,6 +295,10 @@ class HomeView extends React.Component {
         this.fetchChart();
       }
 
+      if(prevState.setAmount != this.state.setAmount || prevState.setPriceLimit != this.state.setPriceLimit) {
+        var total = this.state.setPriceLimit * this.state.setAmount; // + his "mining" fee
+        this.setState({total: total});
+      }
 
     }
 
@@ -305,9 +311,12 @@ class HomeView extends React.Component {
     }
 
     handleOrderInput = (event) => {
-      console.log(event.target.value);
-      var price = this.state.tickerLast * parseFloat(event.target.value);
-      this.setState({total: price.toFixed(2)})
+      this.setState({setAmount:parseFloat(event.target.value) })
+    }
+
+    setNewPriceLimit = (event) => {
+      //var price = this.state.tickerLast * parseFloat(event.target.value);
+      this.setState({setPriceLimit: parseFloat(event.target.value)})
     }
 
     setMarketOrLimit = (val) => {
@@ -350,18 +359,23 @@ class HomeView extends React.Component {
 
       if(this.state.marketOrLimit === "market") {
         if(this.state.buyOrSell === "buy") {
-          gdax.createMarketBuyOrder (this.state.currentSymbol, this.state.total)
+          //.createMarketBuyOrder (this.state.currentSymbol, this.state.total)
+          alert("market order currently disabled");
         }
         if(this.state.buyOrSell === "sell") {
-          gdax.createMarketSellOrder (this.state.currentSymbol, this.state.total)
+          //gdax.createMarketSellOrder (this.state.currentSymbol, this.state.total)
+          alert("market order currently disabled");
         }
       }
 
       if(this.state.marketOrLimit === "limit") {
         if(this.state.buyOrSell === "buy") {
+          gdax.createLimitSellOrder (this.state.currentSymbol, this.setPriceLimit, this.state.total)
+          gdax.createLimitSellOrder ('BTC/USD', 1, 10, { 'type': 'trailing-stop' })
 
         }
         if(this.state.buyOrSell === "sell") {
+          gdax.createLimitSellOrder (this.state.currentSymbol, this.state.total)
 
         }
       }
@@ -458,11 +472,16 @@ class HomeView extends React.Component {
                         </div>
                         <input style={{color: '#232323'}}  onChange={this.handleOrderInput}  type="number" step="any" className="form-input" />
 
-                        <div className=" px-1">
-                          <label id="bestPrice" style={{display:'none', marginTop:'2vh'}} className="form-label text-light">Best Price: {this.state.bestSomething}</label>
+                        <div id="bestPrice" style={{display:'none'}} className=" px-1">
+                          <label style={{marginTop:'2vh'}} className="form-label text-light">Best Price: {this.state.bestSomething}</label>
+                          <hr/>
+                          <label style={{marginTop:'2vh'}} className="form-label text-light">Set Price Limit </label>
+                          <input style={{color: '#232323'}}  onChange={this.setNewPriceLimit}  type="number" step="any" className="form-input" />
+
                         </div>
                     </div>
                     <br/>
+                    <hr/>
                     <div  style={{marginBottom:'5vh', display:'inline-block'}} className="form-group"><label className="form-label text-light">Total ${this.state.total}</label></div>
                     <div className=" px-1"><button onClick={this.placeOrder} className="col-sm-6 col-mx-auto btn">Place Order</button></div>
                 </div>
