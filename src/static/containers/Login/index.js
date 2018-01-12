@@ -437,9 +437,15 @@ class LoginView extends React.Component {
                         </div>
                         <input style={{color: '#232323'}}  onChange={this.handleOrderInput}  type="number" step="any" className="form-input" />
 
-                        <div className=" px-1">
-                          <label id="bestPrice" style={{display:'none', marginTop:'2vh'}} className="form-label text-light">Best Price: {this.state.bestSomething}</label>
+                        <div id="bestPrice" style={{display:'none'}} className=" px-1">
+                          <label style={{marginTop:'2vh'}} className="form-label text-light">Best Price: {this.state.bestSomething}</label>
+                          <hr/>
+                          <label style={{marginTop:'2vh'}} className="form-label text-light">Set Price Limit </label>
+                          <input style={{color: '#232323'}}  onChange={this.setNewPriceLimit}  type="number" step="any" className="form-input" />
+
                         </div>
+
+
                     </div>
                     <br/>
                     <div  style={{marginBottom:'5vh', display:'inline-block'}} className="form-group"><label className="form-label text-light">Total ${this.state.total}</label></div>

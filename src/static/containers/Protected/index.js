@@ -173,16 +173,20 @@ class ProtectedView extends React.Component {
     async fetchTicker () {
       var symbol1 = "BTC/USD";
       var symbol2 = "LTC/USD";
+      var cryptopiaSymbol = "LTC/BTC";
+
       // instantiate the exchange by id
       let exchange = new ccxt['gdax'] ({ enableRateLimit: true })
-      // load all markets from the exchange
-      let markets = await exchange.loadMarkets ()
+      let exchange2 = new ccxt['cryptopia'] ({ enableRateLimit: true })
+
+
 
       while (true) {
           var ticker = [];
 
           ticker.push(await exchange.fetchTicker (symbol1));
           ticker.push(await exchange.fetchTicker (symbol2));
+          ticker.push(await exchange.fetchTicker (cryptopiaSymbol));
 
           if(ticker) {
           var btcAsk = ticker[0].ask;
@@ -190,10 +194,13 @@ class ProtectedView extends React.Component {
 
           var ltcAsk = ticker[1].ask;
           var ltcBid = ticker[1].bid;
+
+          var cryptopiaBid = ticker[2].bid;
+
           console.log(btcAsk);
           console.log(ltcAsk);
           if(btcAsk && ltcAsk) {
-            this.setState({startBTC: btcAsk, startLTC: ltcAsk});
+            this.setState({startBTC: btcAsk, startLTC: ltcAsk, startCryptopia: cryptopiaBid});
             this.handleCalculate();
           }
           }

@@ -5,7 +5,7 @@ import {
 
 const initialState = {
     data: null,
-    isFetching: false
+    isFetching: false,
 };
 
 export default function dataReducer(state = initialState, action) {
@@ -24,4 +24,3 @@ export default function dataReducer(state = initialState, action) {
             return state;
     }
 }
-

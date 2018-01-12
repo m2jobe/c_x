@@ -84,11 +84,13 @@ class HomeView extends React.Component {
             data: null,
             asks: null,
             bids: null,
-            currentSymbol : 'BTC/USD',
+            currentSymbol : null,
+            currentExchange: null,
             tickerBid: '',
             tickerAsk: '',
             tickerLast : '',
-            selectedOption :'BTC/USD',
+            selectedOption :'',
+            selectedOption2 :'',
             balance: '',
             total: 0,
             setAmount: 0,
@@ -99,12 +101,18 @@ class HomeView extends React.Component {
             bestBid: '',
             bestAsk: '',
             bestSomething: '',
-            keepLooping: true
+            keepLooping: true,
+            currentApiKey: null,
+            currentSecretKey : null,
+            currentPassword : null,
+            allSymbols: null,
+            loadExchange:false
         };
 
         this.setMarketOrLimit = this.setMarketOrLimit.bind(this);
         this.setBuyOrSell = this.setBuyOrSell.bind(this);
         this.placeOrder = this.placeOrder.bind(this);
+        this.loadExchange = this.loadExchange.bind(this);
 
     }
 
@@ -133,7 +141,7 @@ class HomeView extends React.Component {
     async fetchTicker () {
       var symbol = this.state.currentSymbol;
       // instantiate the exchange by id
-      let exchange = new ccxt['gdax'] ({ enableRateLimit: true })
+      let exchange = new ccxt[this.state.currentExchange] ({ enableRateLimit: true })
       // load all markets from the exchange
       let markets = await exchange.loadMarkets ()
 
@@ -149,16 +157,21 @@ class HomeView extends React.Component {
 
     async fetchBalance() {
         // instantiate the exchange
-      let gdax = new ccxt.gdax  ({ // ... or new ccxt.gdax ()
-          'apiKey': '72df3c869ecd9bec44afa1bd18a9847f', // standard
-          'secret': 'rJ1wu/ZoD/66yIuAcrE2EsNkMJXkto6Z14ytJOaAGppIeaYwZWnMzPOK9axCWLRYMOi20mTnBvJ4/ZktyqMosA==',
-          'password': 'c2xmqas0ljv', // GDAX requires a password!
+      let exchange = new ccxt[this.state.currentExchange]   ({ // ... or new ccxt[this.state.currentExchange]  ()
+          'apiKey': this.state.currentApiKey, // standard
+          'secret': this.state.currentSecretKey,
+          'password': this.state.currentPassword, //  requires a password!
       })
 
-      // use the testnet for GDAX
-      //gdax.urls['api'] = 'https://api-public.sandbox.gdax.com'
-      const orders = await gdax.fetchOrders ()
-      console.log(orders);
+      // use the testnet for
+      //exchange.urls['api'] = 'https://api-public.sandbox.exchange.com'
+      console.log(this.state.currentExchange)
+      var orders = [ { symbol: 'Exchange', amount: 'does', cost: 'not', datetime: 'support', price: 'fetch', filled: 'orders', price: '', remaining: '', side: '', status: '', }]
+
+      if(this.state.currentExchange !== "kucoin") {
+        orders = await exchange.fetchOrders ()
+      } else {
+      }
       //orders.map (order => console.log(order));
 
       //this.setState({currentOrders: orders})
@@ -167,11 +180,10 @@ class HomeView extends React.Component {
       try {
 
           // fetch account balance from the exchange
-          let gdaxBalance = await gdax.fetchBalance ()
+          let exchangeBalance = await exchange.fetchBalance ()
 
           // output the result
-          //log (gdax.name.green, 'balance', gdaxBalance.info);
-          this.setState({balance: gdaxBalance.info,currentOrders: orders})
+          this.setState({balance: exchangeBalance.info,currentOrders: orders})
 
       } catch (e) {
 
@@ -193,9 +205,10 @@ class HomeView extends React.Component {
       }
     }
 
-    async printOrderBook (id, symbol, depth) {
+    async printOrderBook (symbol, depth) {
 
         // check if the exchange is supported by ccxt
+        var id = this.state.currentExchange;
         let exchangeFound = ccxt.exchanges.indexOf (id) > -1
         if (exchangeFound) {
 
@@ -249,13 +262,13 @@ class HomeView extends React.Component {
                 }
 
             } else {
-              alert("Symbol not found");
+              alert("Symbol not found, pelase refresh page and try another");
                 //log.error ('Symbol', symbol.bright, 'not found')
             }
 
 
         } else {
-            alert("exchange not found")
+            alert("exchange not found, please refresh page and try another")
             //printSupportedExchanges ()
         }
     }
@@ -264,7 +277,7 @@ class HomeView extends React.Component {
       const index = 4 // [ timestamp, open, high, low, close, volume ]
 
 
-      const ohlcv = await new ccxt.gdax ().fetchOHLCV (this.state.currentSymbol, '1m')
+      const ohlcv = await new ccxt[this.state.currentExchange]  ().fetchOHLCV (this.state.currentSymbol, '1h')
 
 
       const lastPrice = ohlcv[ohlcv.length - 1][index] // closing price
@@ -275,29 +288,33 @@ class HomeView extends React.Component {
     }
 
     componentWillMount () {
-      this.fetchChart();
+      //this.fetchChart();
       ///
     }
 
     componentDidMount () {
-        this.fetchBalance();
+        //this.fetchBalance();
     }
 
     componentDidUpdate(prevProps, prevState) {
       if(prevState.data == null ){
         if(prevState.data != this.state.data) {
           this.fetchTicker();
-          this.printOrderBook ("gdax", this.state.currentSymbol, 10);
+          this.printOrderBook (this.state.currentSymbol, 10);
 
         }
       }
-      if(prevState.currentSymbol != this.state.currentSymbol) {
+      if(prevState.currentSymbol != this.state.currentSymbol && prevState.currentSymbol != null) {
         this.fetchChart();
       }
 
       if(prevState.setAmount != this.state.setAmount || prevState.setPriceLimit != this.state.setPriceLimit) {
         var total = this.state.setPriceLimit * this.state.setAmount; // + his "mining" fee
         this.setState({total: total});
+      }
+
+      if(prevState.currentExchange != this.state.currentExchange) {
+        this.setSymbols(this.state.currentExchange);
       }
 
     }
@@ -350,11 +367,11 @@ class HomeView extends React.Component {
     }
 
     placeOrder () {
-      alert("Note, that some exchanges will not accept market orders (they allow limit orders only).");
-      let gdax = new ccxt.gdax  ({ // ... or new ccxt.gdax ()
-          'apiKey': '72df3c869ecd9bec44afa1bd18a9847f', // standard
-          'secret': 'rJ1wu/ZoD/66yIuAcrE2EsNkMJXkto6Z14ytJOaAGppIeaYwZWnMzPOK9axCWLRYMOi20mTnBvJ4/ZktyqMosA==',
-          'password': 'c2xmqas0ljv', // GDAX requires a password!
+      //alert("Note, that some exchanges will not accept market orders (they allow limit orders only).");
+      let exchange = new ccxt[this.state.currentExchange]   ({ // ... or new ccxt[this.state.currentExchange]  ()
+          'apiKey': this.state.currentApiKey, // standard
+          'secret': this.state.currentSecretKey,
+          'password': this.state.currentPassword, //  requires a password!
       })
 
       if(this.state.marketOrLimit === "market") {
@@ -363,22 +380,68 @@ class HomeView extends React.Component {
           alert("market order currently disabled");
         }
         if(this.state.buyOrSell === "sell") {
-          //gdax.createMarketSellOrder (this.state.currentSymbol, this.state.total)
+          //exchange.createMarketSellOrder (this.state.currentSymbol, this.state.total)
           alert("market order currently disabled");
         }
       }
 
       if(this.state.marketOrLimit === "limit") {
         if(this.state.buyOrSell === "buy") {
-          gdax.createLimitSellOrder (this.state.currentSymbol, this.setPriceLimit, this.state.total)
-          gdax.createLimitSellOrder ('BTC/USD', 1, 10, { 'type': 'trailing-stop' })
+          exchange.createLimitSellOrder (this.state.currentSymbol, this.setPriceLimit, this.state.total)
+          exchange.createLimitSellOrder ('BTC/USD', 1, 10, { 'type': 'trailing-stop' })
 
         }
         if(this.state.buyOrSell === "sell") {
-          gdax.createLimitSellOrder (this.state.currentSymbol, this.state.total)
+          exchange.createLimitSellOrder (this.state.currentSymbol, this.state.total)
 
         }
       }
+    }
+
+    async setSymbols(eid) {
+      let exchange = new ccxt[eid] ({
+      })
+      let markets = await exchange.loadMarkets ()
+      // make a table of all markets
+      let symbolsTable =  ccxt.sortBy (Object.values (markets), 'symbol');
+
+      var symbols = []
+
+      for(var i in symbolsTable) {
+
+          var item = symbolsTable[i];
+
+          symbols.push({
+              "value" : item.symbol,
+              "label"  : item.symbol,
+          });
+      }
+
+      console.log(symbols);
+
+
+      this.setState({allSymbols: symbols,currentSymbol:symbols[0].value});
+
+    }
+
+    handleExchangeSelection = (selectedOption2) => {
+      this.setState({selectedOption2, currentExchange: selectedOption2.value});
+    }
+
+    setApiKey = (event) => {
+      this.setState({currentApiKey:event.target.value })
+    }
+    setSecretKey = (event) => {
+      this.setState({currentSecretKey:event.target.value })
+    }
+    setPassword = (event) => {
+      this.setState({currentPassword:event.target.value })
+    }
+
+    loadExchange() {
+      this.fetchChart();
+      this.fetchBalance();
+      this.setState({loadExchange: true})
     }
 
     render() {
@@ -389,10 +452,10 @@ class HomeView extends React.Component {
             },
 
             title: {
-                text: "GDAX OHLC - " + this.state.currentSymbol
+                text: this.state.currentSymbol.toUpperCase() + " OHLC - " + this.state.currentSymbol
             },
             series: [{
-                name: "GDAX OHLC - " + this.state.currentSymbol,
+                name: this.state.currentSymbol.toUpperCase() + " OHLC - " + this.state.currentSymbol,
                 data: this.state.data,
                 dataGrouping: {
 
@@ -401,180 +464,216 @@ class HomeView extends React.Component {
           }
         }
 
-        const { selectedOption } = this.state;
-      	const value = selectedOption && selectedOption.value;
+        const { selectedOption,selectedOption2 } = this.state;
+      	//const value = selectedOption && selectedOption.value;
         return (
             <div style={{padding:'30px'}} className="container table-dark">
-              <div className="row">
-                <div style={{marginBottom: '5vh'}} className="col-md-4 pull-left">
-                <Select
-                  name="form-field-name"
-                  value={this.state.currentSymbol}
-                  onChange={this.handleChange}
-                  options={[
-                    { value: 'BTC/USD', label: 'BTC/USD' },
-                    { value: 'LTC/USD', label: 'LTC/USD' },
-                    { value: 'ETH/USD', label: 'ETH/USD' },
-                    { value: 'BCH/USD', label: 'BCH/USD' },
-                    { value: 'LTC/BTC', label: 'LTC/BTC' },
-                    { value: 'BTC/EUR', label: 'BTC/EUR' },
-                    { value: 'BTC/GBP', label: 'BTC/GBP' },
-                    { value: 'ETH/BTC', label: 'ETH/BTC' },
-                    { value: 'ETH/EUR', label: 'ETH/EUR' },
-                    { value: 'LTC/EUR', label: 'LTC/EUR' }
-                  ]}
-                />
-                  <p> Bid: ${this.state.tickerBid} </p>
-                  <p> Ask: ${this.state.tickerAsk} </p>
-                  <p> Last: ${this.state.tickerLast} </p>
-                </div>
+              {this.state.loadExchange == false ?
 
-                <div style={{marginBottom: '5vh'}} className="col-md-8 pull-right">
+                <div>
+                  <div className="row">
+                    <div className="col-sm-12">
+                    <label> Select an exchange to begin trading </label>
+                      <Select
+                        name="form-field-name"
+                        value={selectedOption2}
+                        onChange={this.handleExchangeSelection}
+                        options={[
+                          { value: 'gdax', label: 'GDAX' },
+                          { value: 'cryptopia', label: 'Cryptopia' },
+                          { value: 'kucoin', label: 'Kucoin' },
+                          { value: 'poloniex', label: 'Poloniex' },
+                          { value: 'bittrex', label: 'Bittrex' },
 
-                { this.state.balance ?
-
-                  <ReactTable
-                    data={this.state.balance}
-                    columns={columnsBalance}
-                    pageSize={4}
-                  />
-                  :
-                  <div>Loading...</div>
-                }
-                </div>
-
-              </div>
-              <div className="row">
-                <div className="col-sm-6 margin-top-medium text-center">
-                {this.state.data == null ?
-            			 <div>Loading...</div>
-            		:
-                  <ReactHighcharts config = {config}></ReactHighcharts>
-
-
-            		}
-                <br/><br/><br/>
-
-                <div className="table-dark p-2 flex-1">
-                    <div className=" px-1">
-                      <button className="col-sm-6 btn  "  id="marketDiv" onClick = {() => this.setMarketOrLimit("market")}>Market</button>
-                      <button className="col-sm-6 btn  text-gray bg-dark" id="limitDiv"  onClick = {() => this.setMarketOrLimit("limit")} >Limit</button>
-                    </div>
-                    <div className=" px-1">
-                      <button className="col-sm-6 btn " id="buyDiv" onClick = {() => this.setBuyOrSell("buy")} >Buy</button>
-                      <button className="col-sm-6 btn  text-gray bg-dark" id="sellDiv" onClick = {() => this.setBuyOrSell("sell")} >Sell</button>
-                    </div>
-
-                    <div style={{marginTop:'5vh', marginBottom:'5vh', display:'inline-block'}} className="form-group">
-
-                        <div className=" px-1"><label className="form-label text-light">Amount {this.state.currentSymbol.slice(0,3)}</label>
-                          {/*<button className="btn btn-order btn-nofocus m-2">Max</button>*/}
-                        </div>
-                        <input style={{color: '#232323'}}  onChange={this.handleOrderInput}  type="number" step="any" className="form-input" />
-
-                        <div id="bestPrice" style={{display:'none'}} className=" px-1">
-                          <label style={{marginTop:'2vh'}} className="form-label text-light">Best Price: {this.state.bestSomething}</label>
-                          <hr/>
-                          <label style={{marginTop:'2vh'}} className="form-label text-light">Set Price Limit </label>
-                          <input style={{color: '#232323'}}  onChange={this.setNewPriceLimit}  type="number" step="any" className="form-input" />
-
-                        </div>
-                    </div>
-                    <br/>
-                    <hr/>
-                    <div  style={{marginBottom:'5vh', display:'inline-block'}} className="form-group"><label className="form-label text-light">Total ${this.state.total}</label></div>
-                    <div className=" px-1"><button onClick={this.placeOrder} className="col-sm-6 col-mx-auto btn">Place Order</button></div>
-                </div>
-
-                </div>
-                <div className="col-sm-6 margin-top-medium text-center">
-                {this.state.asks == null ?
-                   <div>Loading...</div>
-                :
-                  <table className="table table-dark">
-                    <thead style={{color: 'white'}}>
-                      <tr>
-                        <th scope="col">{this.state.currentSymbol} - Ask</th>
-                        <th scope="col"></th>
-                        <th scope="col"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      { this.state.asks &&
-                                this.state.asks.map((ask, i) => (
-                                  <tr style={{color: '#e67e22'}}   key={i}>
-                                    <td> <div  className="ask bar-container"><span style={this.barWidth(ask[1])} className="bar"/></div> </td>
-                                    <td className="ask size">{`${(ask[1])}`}</td>
-                                    <td className="ask price">{`${(ask[0])}`}</td>
-                                  </tr>
-
-                              ))
-
-                      }
-                    </tbody>
-                  </table>
-
-
-                }
-
-
-                { this.state.asks && this.state.asks.length > 0 &&
-                  <div className="orderbook-row spread">
-                    <div className="columns px-1">
-                      <span className="col-2" />
-                      <span className="col-5">SPREAD</span>
-                      <span className="col-5">
-                        ${(this.state.asks[this.state.asks.length - 1][0]
-                            - this.state.bids[0][0]).toFixed(2) }
-                      </span>
+                        ]}
+                      />
                     </div>
                   </div>
-                }
-
-                {this.state.bids == null ?
-                   <div>Loading...</div>
-                :
-                  <table className="table table-dark">
-                    <thead style={{color: 'white'}}>
-                      <tr>
-                        <th scope="col">{this.state.currentSymbol} - Bid</th>
-                        <th scope="col"></th>
-                        <th scope="col"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      { this.state.bids &&
-                        this.state.bids.map((bid, i) => (
-                          <tr style={{color: '#2ecc71'}} key={i} ref={(c) => { if (i === 11) this.focus = c; }}>
-                            <td> <div  className="bid bar-container"><span style={this.barWidthBid(bid[1])} className="bar"/></div> </td>
-                            <td className="bid size">{`${(bid[1])}`}</td>
-                            <td className="bid price">{`${(bid[0])}`}</td>
-                          </tr>
-
-                      ))}
-                    </tbody>
-                  </table>
-
-
-                }
-
-
-
-
+                  <br/>
+                  <div className="row" style= {{marginTop: '10vh'}}>
+                    <div className="col-sm-4">
+                      <label> API Key </label><br/>
+                      <input style={{color: '#232323', marginTop:'5vh'}}  onChange={this.setApiKey}  type="text" className="form-input" />
+                    </div>
+                    <div className="col-sm-4">
+                      <label> Secret Key </label><br/>
+                      <input style={{color: '#232323', marginTop:'5vh'}}  onChange={this.setSecretKey}  type="text"  className="form-input" />
+                    </div>
+                    <div className="col-sm-4">
+                      <label> Password (should only be for gdax) </label><br/>
+                      <input style={{color: '#232323', marginTop:'5vh'}}  onChange={this.setPassword}  type="text"  className="form-input" />
+                    </div>
+                  </div>
+                  <br/>
+                  <div className="row" style= {{marginTop: '10vh'}}>
+                    <div className="col-sm-3">
+                      <button className="btn btn-default" onClick={this.loadExchange}> Load Exchange </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <br/><br/><br/>
-              <div className="row">
-              { this.state.currentOrders ?
-
-                <ReactTable
-                  data={this.state.currentOrders}
-                  columns={columns}
-                />
                 :
-                <div> Loading... </div>
+                <div>
+                  <div className="row">
+                    <div style={{marginBottom: '5vh'}} className="col-md-4 pull-left">
+                    <Select
+                      name="form-field-name"
+                      value={selectedOption}
+                      onChange={this.handleChange}
+                      options={this.state.allSymbols}
+                    />
+                      <p> Bid: ${this.state.tickerBid} </p>
+                      <p> Ask: ${this.state.tickerAsk} </p>
+                      <p> Last: ${this.state.tickerLast} </p>
+                    </div>
+
+                    <div style={{marginBottom: '5vh'}} className="col-md-8 pull-right">
+
+                    { this.state.balance ?
+
+                      <ReactTable
+                        data={this.state.balance}
+                        columns={columnsBalance}
+                        pageSize={4}
+                      />
+                      :
+                      <div>Loading...</div>
+                    }
+                    </div>
+
+                  </div>
+                  <div className="row">
+                    <div className="col-sm-6 margin-top-medium text-center">
+                    {this.state.data == null ?
+                			 <div>Loading...</div>
+                		:
+                      <ReactHighcharts config = {config}></ReactHighcharts>
+
+
+                		}
+                    <br/><br/><br/>
+
+                    <div className="table-dark p-2 flex-1">
+                        <div className=" px-1">
+                          <button className="col-sm-6 btn  "  id="marketDiv" onClick = {() => this.setMarketOrLimit("market")}>Market</button>
+                          <button className="col-sm-6 btn  text-gray bg-dark" id="limitDiv"  onClick = {() => this.setMarketOrLimit("limit")} >Limit</button>
+                        </div>
+                        <div className=" px-1">
+                          <button className="col-sm-6 btn " id="buyDiv" onClick = {() => this.setBuyOrSell("buy")} >Buy</button>
+                          <button className="col-sm-6 btn  text-gray bg-dark" id="sellDiv" onClick = {() => this.setBuyOrSell("sell")} >Sell</button>
+                        </div>
+
+                        <div style={{marginTop:'5vh', marginBottom:'5vh', display:'inline-block'}} className="form-group">
+
+                            <div className=" px-1"><label className="form-label text-light">Amount {this.state.currentSymbol.slice(0,3)}</label>
+                              {/*<button className="btn btn-order btn-nofocus m-2">Max</button>*/}
+                            </div>
+                            <input style={{color: '#232323'}}  onChange={this.handleOrderInput}  type="number" step="any" className="form-input" />
+
+                            <div id="bestPrice" style={{display:'none'}} className=" px-1">
+                              <label style={{marginTop:'2vh'}} className="form-label text-light">Best Price: {this.state.bestSomething}</label>
+                              <hr/>
+                              <label style={{marginTop:'2vh'}} className="form-label text-light">Set Price Limit </label>
+                              <input style={{color: '#232323'}}  onChange={this.setNewPriceLimit}  type="number" step="any" className="form-input" />
+
+                            </div>
+                        </div>
+                        <br/>
+                        <hr/>
+                        <div  style={{marginBottom:'5vh', display:'inline-block'}} className="form-group"><label className="form-label text-light">Total ${this.state.total}</label></div>
+                        <div className=" px-1"><button onClick={this.placeOrder} className="col-sm-6 col-mx-auto btn">Place Order</button></div>
+                    </div>
+
+                    </div>
+                    <div className="col-sm-6 margin-top-medium text-center">
+                    {this.state.asks == null ?
+                       <div>Loading...</div>
+                    :
+                      <table className="table table-dark">
+                        <thead style={{color: 'white'}}>
+                          <tr>
+                            <th scope="col">{this.state.currentSymbol} - Ask</th>
+                            <th scope="col"></th>
+                            <th scope="col"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          { this.state.asks &&
+                                    this.state.asks.map((ask, i) => (
+                                      <tr style={{color: '#e67e22'}}   key={i}>
+                                        <td> <div  className="ask bar-container"><span style={this.barWidth(ask[1])} className="bar"/></div> </td>
+                                        <td className="ask size">{`${(ask[1])}`}</td>
+                                        <td className="ask price">{`${(ask[0])}`}</td>
+                                      </tr>
+
+                                  ))
+
+                          }
+                        </tbody>
+                      </table>
+
+
+                    }
+
+
+                    { this.state.asks && this.state.asks.length > 0 &&
+                      <div className="orderbook-row spread">
+                        <div className="columns px-1">
+                          <span className="col-2" />
+                          <span className="col-5">SPREAD</span>
+                          <span className="col-5">
+                            ${(this.state.asks[this.state.asks.length - 1][0]
+                                - this.state.bids[0][0]).toFixed(2) }
+                          </span>
+                        </div>
+                      </div>
+                    }
+
+                    {this.state.bids == null ?
+                       <div>Loading...</div>
+                    :
+                      <table className="table table-dark">
+                        <thead style={{color: 'white'}}>
+                          <tr>
+                            <th scope="col">{this.state.currentSymbol} - Bid</th>
+                            <th scope="col"></th>
+                            <th scope="col"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          { this.state.bids &&
+                            this.state.bids.map((bid, i) => (
+                              <tr style={{color: '#2ecc71'}} key={i} ref={(c) => { if (i === 11) this.focus = c; }}>
+                                <td> <div  className="bid bar-container"><span style={this.barWidthBid(bid[1])} className="bar"/></div> </td>
+                                <td className="bid size">{`${(bid[1])}`}</td>
+                                <td className="bid price">{`${(bid[0])}`}</td>
+                              </tr>
+
+                          ))}
+                        </tbody>
+                      </table>
+
+
+                    }
+
+
+
+
+                    </div>
+                  </div>
+                  <br/><br/><br/>
+                  <div className="row">
+                  { this.state.currentOrders ?
+
+                    <ReactTable
+                      data={this.state.currentOrders}
+                      columns={columns}
+                    />
+                    :
+                    <div> Loading... </div>
+                  }
+                  </div>
+                </div>
               }
-              </div>
             </div>
         );
     }

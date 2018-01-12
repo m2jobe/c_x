@@ -35,7 +35,8 @@ class App extends React.Component {
     };
 
     goToProtected = () => {
-        this.props.dispatch(push('/calculator'));
+        //this.props.dispatch(push('/calculator'));
+        location.replace("/calculator")
     };
 
     goToCryptopia = () => {
@@ -82,14 +83,10 @@ class App extends React.Component {
                                 <ul className="nav navbar-nav navbar-right">
                                     <li className={homeClass}>
                                         <a className="js-go-to-index-button" onClick={this.goToIndex}>
-                                            <i className="fa fa-home" /> GDAX Exchange
+                                            <i className="fa fa-home" /> Exchanges
                                         </a>
                                     </li>
-                                    <li className={cryptopiaClass}>
-                                        <a className="js-go-to-protected-button" onClick={this.goToCryptopia}>
-                                            <i className="fa fa-lock" /> Cryptopia Exchange
-                                        </a>
-                                    </li>
+
                                     <li className={protectedClass}>
                                         <a className="js-go-to-protected-button" onClick={this.goToProtected}>
                                             <i className="fa fa-lock" /> Arbitrage Calculator
@@ -100,14 +97,10 @@ class App extends React.Component {
                                 <ul className="nav navbar-nav navbar-right">
                                     <li className={homeClass}>
                                         <a className="js-go-to-index-button" onClick={this.goToIndex}>
-                                            <i className="fa fa-home" /> GDAX Exchange
+                                            <i className="fa fa-home" /> Exchanges
                                         </a>
                                     </li>
-                                    <li className={cryptopiaClass}>
-                                        <a className="js-go-to-protected-button" onClick={this.goToCryptopia}>
-                                            <i className="fa fa-lock" /> Cryptopia Exchange
-                                        </a>
-                                    </li>
+
                                     <li className={protectedClass}>
                                         <a className="js-go-to-protected-button" onClick={this.goToProtected}>
                                             <i className="fa fa-lock" /> Arbitrage Calculator
